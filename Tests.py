@@ -1,12 +1,12 @@
 import unittest
-from GameLogic1 import *
+from Logic import *
 random.seed(100500)
 
 class TestStringMethods(unittest.TestCase):
 
 	def testHitHiders1(self):
 		hiders = [1,2,3,4]
-		hits = hidersHitsAdd(hiders)
+		hits = createHidersHits(hiders)
 		self.assertEqual(hits, [0,0,0,0], "Hits are wrong")
 
 	def testSplitPlayers1(self):
