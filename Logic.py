@@ -19,24 +19,23 @@ def splitPlayers(pls):
 
 
 # проверка принадлежности человека к одной из команд
-# TODO: упростить, используя функции find_*
 def is_seeker(seeker, seekers):
-	for a in seekers:
-		if seeker == a:
-			return True
-	return False
+	i = find_seeker(seeker, seekers)
+	if i == -1:
+		return False
+	return True
 
 def is_hider(hider, hiders):
-	for b in hiders:
-		if hider == b:
-			return True
-	return False
+	i = find_hider(seeker, seekers)
+	if i == -1:
+		return False
+	return True
 
 def is_frozen(frozen, frozens):
-	for b in frozens:
-		if frozen == b:
-			return True
-	return False
+	i = find_frozen(seeker, seekers)
+	if i == -1:
+		return False
+	return True
 
 # проверка принадлежности человека к одной из команд, возврат индекса в списке
 def find_seeker(seeker, seekers):
@@ -75,11 +74,11 @@ def findPlayerHits(players, hits, player):
 			return hits[i], nomhitbox
 	return -1, -1
 
-# TODO: playerHitPlayer(player1, player2, hiders, seekers, frozens, ...?)
-# Функция будет получать два имени игроков и определять,
-# что нужно делать в зависимости от того, в каких командах
-# находятся эти игроки
-
+def playerHitPlayer(player1, player2, hiders, seekers, frozens, players, hits, timer):
+	if is_seeker(player1) and is_hider(player2):
+		seekerHitHider(player1, player2, seekers, hiders, players, hits, frozens, timer)
+	if is_hider(player1) and is_frozen(player2):
+		unfreeze(player1, player2, hiders, frozens, timer)
 
 # Функция получает на вход имена seeker-а и hider-а, и увеличивает
 # счетчик ударов у hider-а. В зависимости от значения счетчика
@@ -106,33 +105,34 @@ def goToSeekersNofreeze(seekers, hider, hiders):
 	seekers.append(hider)
 
 # функция перекидывает замороженного человека в команду искателей
-# TODO: перенести сюда удаление таймера заморозки (может быть? в hdrfrozen она есть)
 def goToSeekers(seekers, frz, frozens):
 	print(f"Hider {frz} becomes a seeker after a timeout!")
 	newnomseeker = find_frozen(frz, frozens)
 	frozens.pop(newnomseeker)
+	timers.pop(newnomseeker)
 	seekers.append(frz)
 
 # функция добавляет хайдера в список замороженных и заводит таймер
 def hdrfrozen(hdr, hiders, frozen, timers):
 	nomhider = find_hider(hdr, hiders)
-	# TODO: убрать if в главную функцию проверки хитов
-	if is_hider(hdr, hiders):
-		hiders.pop(nomhider)
-		frozen.append(hdr)
-		freeze_timer = createTimer()
-		timers.append(freeze_timer)
-		print(str(hdr)+" was frozen!")
+	hiders.pop(nomhider)
+	frozen.append(hdr)
+	freeze_timer = createTimer()
+	timers.append(freeze_timer)
+	print(str(hdr)+" was frozen!")
 	return frozen, timers
 
+def checkTimer(timer, timeout):
+	timePassed = int(time.time() - timer)
+	if timePassed > timeout:
+		return True
+	return False
 
 # функция ходит по массиву таймеров и находит истекший
-# TODO: вынести проверку одного таймера в checkTimer
 def findExpiredTimer(timers, timeout):
 	index = 0
-	for start in timers:
-		timePassed = int(time.time() - start)
-		if timePassed > timeout:
+	for timer in timers:
+		if checkTimer(timer, timeout):
 			return index
 		index = index+1
 	return -1
@@ -140,22 +140,15 @@ def findExpiredTimer(timers, timeout):
 # функция размораживает человека и добавляет его обратно
 # в список хайдеров
 def unfreeze(hdr, frz, hiders, frozens, timers):
-	# TODO: убрать проверку if в главную функцию
-	if is_frozen(frz, frozens) and is_hider(hdr, hiders):
-		nomfrozen = find_frozen(frz, frozens)
-		frozens.pop(nomfrozen)
-		timers.pop(nomfrozen)
-		hiders.append(frz)
-		print(f"{frz} was unfrozen by {hdr}. Thanks, man!")
+	nomfrozen = find_frozen(frz, frozens)
+	frozens.pop(nomfrozen)
+	timers.pop(nomfrozen)
+	hiders.append(frz)
+	print(f"{frz} was unfrozen by {hdr}. Thanks, man!")
 
 # функция проверяет таймер игры
-# TODO: завести одну функцию checkTimer и вызвать ее здесь
 def checkGameTimer(gametimer, timeout):
-	timePassed = int(time.time() - gametimer)
-	if timePassed > timeout:
-		print ("Game timer is out!!!")
-		return True
-	return False
+	return checkTimer(gametimer, timeout)
 
 def createTimer():
 	return time.time()

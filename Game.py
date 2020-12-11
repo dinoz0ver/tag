@@ -83,7 +83,6 @@ def GameLoop():
 		expiredtimer = (findExpiredTimer(timers, FREEZE_TIMEOUT))
 		if expiredtimer != -1:
 			print(f"Timer {expiredtimer} has expired")
-			timers.pop(expiredtimer)
 			goToSeekers(seekers, frozen[expiredtimer], frozen)
 		wait_a_little()
 
