@@ -15,6 +15,12 @@ def getGameTimeout():
 def getSeed():
   return 100500
 
+def getSeekersSpawn():
+  return getHidersSpawn()
+
+def getHidersSpawn():
+  return (75, 140, 15) # вход в особняк
+
 def createTeam(name, players):
   print(f"Created team '{name}' with players {players}")
 
@@ -28,6 +34,15 @@ def startGame(Game):
 def startSeekerTimer(sec, to):
   print("started SeekerTimer")
   print("giving seekers some other effect for xx seconds")
+
+def releaseSeekers(seekers):
+  print("seekers have been released! hiders, be careful!")
+
+def getSeekersSpawn():
+  return getHidersSpawn()
+
+def getHidersSpawn():
+  return (75, 140, 15) # вход в особняк):
 
 HitQueue = Queue()
 def getPlayerHits():

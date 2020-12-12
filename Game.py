@@ -8,6 +8,8 @@ def init(Game):
   Game.FREEZE_TIMEOUT = API.getFreezeTimeout()
   Game.SEEKER_TIMEOUT = API.getSeekerTimeout()
   Game.GAME_TIMEOUT = API.getGameTimeout()
+  Game.SEEKERS_SPAWN = API.getSeekersSpawn()
+  Game.HIDERS_SPAWN = API.getHidersSpawn()
 
   # инициализация генератора случайных чисел
   Game.SEED = API.getSeed()
@@ -44,14 +46,12 @@ def init(Game):
 
 def copyGame(Game):
   newGame = RealGame()
-  newGame.players = Game.players.copy()
-  newGame.hiders  = Game.hiders.copy()
-  newGame.seekers = Game.seekers.copy()
-  newGame.frozen  = Game.frozen.copy()
-  newGame.timers  = Game.timers.copy()
-  newGame.hits    = Game.hits.copy()
-  newGame.gametimer = Game.gametimer
-  newGame.seekertimer = Game.seekertimer
+  for name, obj in vars(Game).items():
+    if isinstance(obj, list):
+      newObj = obj.copy()
+    else:
+      newObj = obj
+    setattr(newGame, name, newObj)
   return newGame
 
 def listDiff(smaller, bigger):
@@ -87,6 +87,11 @@ def findDiff(oldGame, newGame):
 def GameLoop(Game):
   gameCopy = copyGame(Game)
   while True:
+    # проверка таймера искателей
+    if Game.seekertimer is not None and Logic.checkTimer(Game.seekertimer, Game.SEEKER_TIMEOUT):
+      API.releaseSeekers(Game.seekers)
+      Game.seekertimer = None
+
     # проверка победы по завершении таймера игры
     if Logic.checkGameTimer(Game.gametimer, Game.GAME_TIMEOUT):
       if Logic.seekersWon(Game.seekers, Game.hiders, Game.frozen):

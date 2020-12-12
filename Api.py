@@ -16,6 +16,12 @@ def getSeed():
 def getPlayers():
   return mc.getPlayerNames()
 
+def getSeekersSpawn():
+  return (64, 139, 15) # коробка искателей
+
+def getHidersSpawn():
+  return (75, 140, 15) # вход в особняк
+
 def createTeam(team, players):
   mc.teams.removeTeam(team)
   mc.teams.createTeam(team)
@@ -33,6 +39,16 @@ def startGame(Game):
   for pl in Game.hiders:
     mc.player.makeVisible(pl)
     mc.player.makeInvisible(pl, Game.GAME_TIMEOUT)
+    mc.setPos(pl, *Game.HIDERS_SPAWN)
+    print(f"{pl} прячется!")
+  for pl in Game.seekers:
+    mc.setPos(pl, *Game.SEEKERS_SPAWN)
+    print(f"{pl} ищет!")
+
+def releaseSeekers(seekers):
+  for skr in seekers:
+    mc.setPos(skr, *getHidersSpawn())
+  print("$9 Искатели выпущены на поле!")
 
 def getPlayerHits():
   return mc.events.pollEntityHits()
@@ -60,13 +76,17 @@ def removeFrozen(frozen):
     print(f"§4 Игрок {pl} был разморожен!")
 
 def updateScore(player, score):
-  print(f"§4 В игрока {player} ударили {score} раз!")
+  print(f"§4 По {player} ударили {score} раз!")
 
 def announceWin(team):
-  print(f"§3 Команда {team} победюла!! Мои поздравления")
+  if team == "seekers":
+    print("Победа достается команде искателей! Хорошо всех заморозили")
+  else:
+    print("Победа команды прячущихся!")
 
 def finishGame(Game):
   removeFrozen(Game.frozen)
   for pl in Game.players:
     mc.player.makeVisible(pl)
+    mc.setPos(pl, *Game.HIDERS_SPAWN)
   print("§3 Игра окончена!")
