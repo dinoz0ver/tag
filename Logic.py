@@ -44,32 +44,30 @@ def is_frozen(frozen, frozens):
 
 # проверка принадлежности человека к одной из команд, возврат индекса в списке
 def find_seeker(seeker, seekers):
-	for i in range(len(seekers)):
-		if seeker == seekers[i]:
-			return i
-	return -1
+	return generic_find(seeker, seekers)
 
 def find_hider(hider, hiders):
-	for i in range(len(hiders)):
-		if hider == hiders[i]:
-			return i
-	return -1
-
+	return generic_find(hider, hiders)
 
 def find_frozen(frozen, frozens):
-	for i in range(len(frozens)):
-		if frozen == frozens[i]:
+	return generic_find(frozen, frozens)
+
+def generic_find(element, lst):
+	for i in range(len(lst)):
+		if element == lst[i]:
 			return i
 	return -1
+
 
 # работа со счетчиками хитов
 
 # увеличение хитов игрока на 1
 def increasePlayerHits(players, hits, player):
 	playerhits, nomhitbox = findPlayerHits(players, hits, player)
-	playerhits = playerhits + 1
-	hits[nomhitbox] = playerhits
-	return playerhits
+	if nomhitbox != -1:
+		playerhits = playerhits + 1
+		hits[nomhitbox] = playerhits
+		return playerhits
 
 # поиск счетчика хитов по имени игрока
 def findPlayerHits(players, hits, player):

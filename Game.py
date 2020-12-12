@@ -1,16 +1,17 @@
 import Logic
-import FakeApi as API
+import Api as API
 
 class RealGame: pass
 
-def init(Game, seed=100500):
+def init(Game):
   # установка таймаутов
   Game.FREEZE_TIMEOUT = API.getFreezeTimeout()
+  Game.SEEKER_TIMEOUT = API.getSeekerTimeout()
   Game.GAME_TIMEOUT = API.getGameTimeout()
 
   # инициализация генератора случайных чисел
-  Game.SEED = seed
-  Logic.randomSeed(seed)
+  Game.SEED = API.getSeed()
+  Logic.randomSeed(Game.SEED)
 
   # получения от Майнкрафта списка игроков
   players = API.getPlayers()
@@ -31,15 +32,15 @@ def init(Game, seed=100500):
   Game.hits = Logic.createPlayersHits(players)
 
   # отправляем Майну команду "начало игры"
-  API.startGame()
+  API.startGame(Game)
 
   # запускаем таймер и отправляем Майну команду "запустить главный таймер"
   Game.gametimer = Logic.createTimer()
-  API.startMainGameTimer()
+  API.startMainGameTimer(Game.gametimer, Game.GAME_TIMEOUT)
 
   # то же самое, только для таймера искателей
   Game.seekertimer = Logic.createTimer()
-  API.startSeekerTimer()
+  API.startSeekerTimer(Game.seekertimer, Game.SEEKER_TIMEOUT)
 
 def copyGame(Game):
   newGame = RealGame()
@@ -69,7 +70,7 @@ def findDiff(oldGame, newGame):
     newFrozen = listDiff(oldGame.frozen, newGame.frozen)
     if len(newFrozen) > 0:
       # добавились замороженные люди
-      API.addFrozen(newFrozen)
+      API.addFrozen(newFrozen, newGame.FREEZE_TIMEOUT)
     newUnfrozen = listDiff(newGame.frozen, oldGame.frozen)
     if len(newUnfrozen) > 0:
       # люди разморозились по таймеру

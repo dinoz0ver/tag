@@ -6,25 +6,28 @@ def getPlayers():
 def getFreezeTimeout():
   return 15
 
+def getSeekerTimeout():
+  return 15
+
 def getGameTimeout():
   return 60
+
+def getSeed():
+  return 100500
 
 def createTeam(name, players):
   print(f"Created team '{name}' with players {players}")
 
-def startMainGameTimer():
+def startMainGameTimer(sec, to):
   print("Main game timer started")
   print("Giving everyone invisibility for xxx seconds")
 
-def startGame():
+def startGame(Game):
   print("started the Game, tp-ing hiders to hiders TP")
 
-def startSeekerTimer():
+def startSeekerTimer(sec, to):
   print("started SeekerTimer")
   print("giving seekers some other effect for xx seconds")
-
-def movePlayerToSeekers(player):
-  print(f"Unfreezing {player}, removing particles, switching teams")
 
 HitQueue = Queue()
 def getPlayerHits():
@@ -39,7 +42,7 @@ def removeHiders(hiders):
 def addSeekers(seekers):
   print(f"Adding new seekers {seekers} to the team")
 
-def addFrozen(frozen):
+def addFrozen(frozen, to):
   print(f"Adding new frozen players {frozen}")
 
 def removeFrozen(frozen):
