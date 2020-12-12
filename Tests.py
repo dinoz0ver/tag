@@ -6,7 +6,7 @@ class TestStringMethods(unittest.TestCase):
 
 	def testHitHiders1(self):
 		hiders = [1,2,3,4]
-		hits = createHidersHits(hiders)
+		hits = createPlayersHits(hiders)
 		self.assertEqual(hits, [0,0,0,0], "Hits are wrong")
 
 	def testSplitPlayers1(self):

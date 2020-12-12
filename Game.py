@@ -1,90 +1,122 @@
-from Logic import *
-from Utils import input
+import Logic
+import FakeApi as API
 
-FREEZE_TIMEOUT = 30 # секунд
-GAME_TIMEOUT = 300 # секунд
-SEED = 100500
+class RealGame: pass
 
-import random
-random.seed(SEED)
+def init(Game, seed=100500):
+  # установка таймаутов
+  Game.FREEZE_TIMEOUT = API.getFreezeTimeout()
+  Game.GAME_TIMEOUT = API.getGameTimeout()
 
-players = [
-"1 bruh",
-"2 bruh",
-"3 bruh",
-"4 bruh",
-"5 bruh"
-]
+  # инициализация генератора случайных чисел
+  Game.SEED = seed
+  Logic.randomSeed(seed)
 
-hiders, seekers = splitPlayers(players)
-frozen = []
-timers = []
-hits = createHidersHits(players)
-gametimer = createTimer()
+  # получения от Майнкрафта списка игроков
+  players = API.getPlayers()
 
+  # деление игроков на команды (внутри программы)
+  hiders, seekers = Logic.splitPlayers(players)
 
-print("Seekers:", seekers)
-print("Hiders:", hiders)
+  # деление игроков на команды в Майне
+  API.createTeam("hiders", hiders)
+  API.createTeam("seekers", seekers)
 
+  # складываем все списки в коробку Game
+  Game.players = players
+  Game.hiders = hiders
+  Game.seekers = seekers
+  Game.frozen = []
+  Game.timers = []
+  Game.hits = Logic.createPlayersHits(players)
 
-def CheckInput():
-	try:
-		while True:
-			s = input("> ")
-			if s == "hit":
-				s1 = input("Кто ударил? ")
-				s2 = input("Кого ударил? ")
-				if is_seeker(s1, seekers) and is_hider(s2, hiders):
-					seekerHitHider(s1, s2, seekers, hiders, players, hits, frozen, timers)
-			elif s == "hithit":
-				s1 = input("Кто ударил? ")
-				s2 = input("Кого ударил? ")
-				num = int(input("Сколько раз? "))
-				if is_seeker(s1, seekers) and is_hider(s2, hiders):
-					for i in range(num):
-						seekerHitHider(s1, s2, seekers, hiders, players, hits, frozen, timers)
-			elif s == "print":
-				print("Seekers:", seekers)
-				print("Hiders:", hiders)
-				print("Frozen:", frozen)
-				print("Timers:", timers)
-			elif s == "cold":
-				f1 = input("Кто заморозил? ")
-				f2 = input("Кого заморозили? ")
-				if is_seeker(f1, seekers) and is_hider(f2, hiders):
-					hdrfrozen(f2, hiders, frozen, timers)
-			elif s == "timers":
-				expiredtimer = (findExpiredTimer(timers, FREEZE_TIMEOUT))
-				print(expiredtimer)
-				if expiredtimer != -1:
-					timers.pop(expiredtimer)
-					goToSeekers(seekers, frozen[expiredtimer], frozen)
-			elif s == "unfreeze":
-				f2 = input("Кого размораживаем? ")
-				f1 = input("Кто размораживает? ")
-				unfreeze(f1, f2, hiders, frozen, timers)
-			elif s == "hits":
-				print(players)
-				print(hits)
-	except EOFError:
-		pass
+  # отправляем Майну команду "начало игры"
+  API.startGame()
 
-def GameLoop():
-	while True:
-		if checkGameTimer(gametimer, GAME_TIMEOUT):
-			if seekersWon(seekers, hiders, frozen):
-				print ("Seekers won!!!")
-			if hidersWon(seekers, hiders, frozen):
-				print ("Hiders won!!!")
-			break
-		if seekersWon(seekers, hiders, frozen):
-			print ("Seekers won!!!")
-			break
-		expiredtimer = (findExpiredTimer(timers, FREEZE_TIMEOUT))
-		if expiredtimer != -1:
-			print(f"Timer {expiredtimer} has expired")
-			goToSeekers(seekers, frozen[expiredtimer], frozen)
-		wait_a_little()
+  # запускаем таймер и отправляем Майну команду "запустить главный таймер"
+  Game.gametimer = Logic.createTimer()
+  API.startMainGameTimer()
 
-def wait_a_little():
-	time.sleep(0.001)
+  # то же самое, только для таймера искателей
+  Game.seekertimer = Logic.createTimer()
+  API.startSeekerTimer()
+
+def copyGame(Game):
+  newGame = RealGame()
+  newGame.players = Game.players.copy()
+  newGame.hiders  = Game.hiders.copy()
+  newGame.seekers = Game.seekers.copy()
+  newGame.frozen  = Game.frozen.copy()
+  newGame.timers  = Game.timers.copy()
+  newGame.hits    = Game.hits.copy()
+  newGame.gametimer = Game.gametimer
+  newGame.seekertimer = Game.seekertimer
+  return newGame
+
+def listDiff(smaller, bigger):
+  return list(set(bigger) - set(smaller))
+
+def findDiff(oldGame, newGame):
+  changed = False
+  if len(newGame.hiders) < len(oldGame.hiders):
+    # хайдеров стало меньше
+    API.removeHiders(listDiff(newGame.hiders, oldGame.hiders))
+    changed = True
+  if len(newGame.seekers) > len(oldGame.seekers):
+    API.addSeekers(listDiff(oldGame.seekers, newGame.seekers))
+    changed = True
+  if set(oldGame.frozen) != set(newGame.frozen):
+    newFrozen = listDiff(oldGame.frozen, newGame.frozen)
+    if len(newFrozen) > 0:
+      # добавились замороженные люди
+      API.addFrozen(newFrozen)
+    newUnfrozen = listDiff(newGame.frozen, oldGame.frozen)
+    if len(newUnfrozen) > 0:
+      # люди разморозились по таймеру
+      API.removeFrozen(newUnfrozen)
+    changed = True
+  if oldGame.hits != newGame.hits:
+    for i,score in enumerate(newGame.hits):
+      if score != oldGame.hits[i]:
+        API.updateScore(newGame.players[i], score)
+    changed = True
+  return changed
+
+# TODO: seekertimer
+def GameLoop(Game):
+  gameCopy = copyGame(Game)
+  while True:
+    # проверка победы по завершении таймера игры
+    if Logic.checkGameTimer(Game.gametimer, Game.GAME_TIMEOUT):
+      if Logic.seekersWon(Game.seekers, Game.hiders, Game.frozen):
+        API.announceWin("seekers")
+      if Logic.hidersWon(Game.seekers, Game.hiders, Game.frozen):
+        API.announceWin("hiders")
+      break
+    # проверка досрочной победы искателей
+    if Logic.seekersWon(Game.seekers, Game.hiders, Game.frozen):
+      API.announceWin("seekers")
+      break
+    # проверка таймеров замороженных игроков
+    i = Logic.findExpiredTimer(Game.timers, Game.FREEZE_TIMEOUT)
+    if i != -1:
+      Logic.goToSeekers(Game.seekers, Game.frozen[i], Game.frozen, Game.timers)
+    # получение событий ударов
+    # Пример: [EntityEvent(damager=vadimpilyugin, damagee=Dinozover)]
+    hasHit = False
+    for event in API.getPlayerHits():
+      hasHit = True
+      player1 = event.damager
+      player2 = event.damagee
+      Logic.playerHitPlayer(player1, player2, Game.hiders, Game.seekers, Game.frozen, Game.players, Game.hits, Game.timers)
+
+    hasDiff = findDiff(gameCopy, Game)
+
+    if not hasDiff and hasHit:
+      print("Nothing changed after hit")
+    elif hasDiff:
+      print("Game state has changed, creating new copy")
+      gameCopy = copyGame(Game)
+
+    Logic.wait_a_little()
+  API.finishGame(Game)

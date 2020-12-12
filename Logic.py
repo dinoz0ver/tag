@@ -17,6 +17,11 @@ def splitPlayers(pls):
 
 	return hiders, seekers
 
+def randomSeed(seed):
+	  random.seed(seed)
+
+def wait_a_little():
+	time.sleep(0.01)
 
 # проверка принадлежности человека к одной из команд
 def is_seeker(seeker, seekers):
@@ -26,13 +31,13 @@ def is_seeker(seeker, seekers):
 	return True
 
 def is_hider(hider, hiders):
-	i = find_hider(seeker, seekers)
+	i = find_hider(hider, hiders)
 	if i == -1:
 		return False
 	return True
 
 def is_frozen(frozen, frozens):
-	i = find_frozen(seeker, seekers)
+	i = find_frozen(frozen, frozens)
 	if i == -1:
 		return False
 	return True
@@ -75,9 +80,9 @@ def findPlayerHits(players, hits, player):
 	return -1, -1
 
 def playerHitPlayer(player1, player2, hiders, seekers, frozens, players, hits, timer):
-	if is_seeker(player1) and is_hider(player2):
+	if is_seeker(player1, seekers) and is_hider(player2, hiders):
 		seekerHitHider(player1, player2, seekers, hiders, players, hits, frozens, timer)
-	if is_hider(player1) and is_frozen(player2):
+	if is_hider(player1, hiders) and is_frozen(player2, frozens):
 		unfreeze(player1, player2, hiders, frozens, timer)
 
 # Функция получает на вход имена seeker-а и hider-а, и увеличивает
@@ -105,7 +110,7 @@ def goToSeekersNofreeze(seekers, hider, hiders):
 	seekers.append(hider)
 
 # функция перекидывает замороженного человека в команду искателей
-def goToSeekers(seekers, frz, frozens):
+def goToSeekers(seekers, frz, frozens, timers):
 	print(f"Hider {frz} becomes a seeker after a timeout!")
 	newnomseeker = find_frozen(frz, frozens)
 	frozens.pop(newnomseeker)
@@ -172,8 +177,8 @@ def hidersWon(seekers, hiders, frozens):
 	return False
 
 # вспомогательная не очень нужная функция для создания списка хитов
-def createHidersHits(hiders):
+def createPlayersHits(players):
 	hits = []
-	for i in hiders:
+	for i in players:
 		hits.append(0)
 	return hits
