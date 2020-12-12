@@ -1,5 +1,5 @@
 from Game import *
 
 Game = RealGame()
-init(Game)
+init(Game, fake=False)
 GameLoop(Game)

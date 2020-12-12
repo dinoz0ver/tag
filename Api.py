@@ -90,3 +90,16 @@ def finishGame(Game):
     mc.player.makeVisible(pl)
     mc.setPos(pl, *Game.HIDERS_SPAWN)
   print("§3 Игра окончена!")
+
+def addUnfreezers(unfreezers):
+  for key in unfreezers:
+    hdr, frz = key
+    print(f"[{hdr}] размораживает {frz}")
+
+def sendUnfreezeCount(hdr, frz, timePassed, timeTotal):
+  frac = timePassed / timeTotal
+  print(frac)
+  frac = int(frac*100)
+  if frac > 100:
+    frac = 100
+  print(f"[{frz}] разморозка {frac}%")

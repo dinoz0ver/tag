@@ -3,6 +3,8 @@ from Logic import *
 import time
 random.seed(100500)
 
+class TestGame: pass
+
 class TestStringMethods(unittest.TestCase):
 
 	def testFind(self):
@@ -28,101 +30,147 @@ class TestStringMethods(unittest.TestCase):
 	def testFreezeTimeout(self):
 		skr = 0
 		hdr = 1
-		players = [0,1,2,3,4,5]
-		hits = 		[0,2,0,0,0,0]
-		seekers = [0,2,3]
-		hiders = 	[1,4,5]
-		frozens = []
-		timer = 	[]
-		seekerHitHider(skr, hdr, seekers, hiders, players, hits, frozens, timer)
-		self.assertEqual(frozens, [1], "1 was not frozen!")
+		Game = TestGame()
+		players = Game.players = [0,1,2,3,4,5]
+		hits = Game.hits = 		[0,2,0,0,0,0]
+		seekers = Game.seekers = [0,2,3]
+		hiders = Game.hiders = 	[1,4,5]
+		frozen = Game.frozen = []
+		timers = Game.timers = 	[]
+		seekerHitHider(skr, hdr, Game)
+		self.assertEqual(frozen, [1], "1 was not frozen!")
 		self.assertEqual(hits, [0,3,0,0,0,0], "Hits were reset!")
 		self.assertEqual(hiders, [4,5], "Was not removed from hiders!")
-		goToSeekers(seekers, hdr, frozens, timer)
-		self.assertEqual(frozens, [], "1 was not unfrozen!")
-		self.assertEqual(timer, [], "timers were not reset")
+		goToSeekers(seekers, hdr, frozen, timers)
+		self.assertEqual(frozen, [], "1 was not unfrozen!")
+		self.assertEqual(timers, [], "timerss were not reset")
 		self.assertEqual(hits, [0,3,0,0,0,0], "Hits were reset!")
 		self.assertEqual(hiders, [4,5], "Was not removed from hiders!")
 		self.assertEqual(seekers, [0,2,3,1], "Was not moved to seekers!")
 
-	def testCheckTimer(self):
-		timer = createTimer()
+	def testCheckTimers(self):
+		timers = createTimer()
 		timeout = 40
-		self.assertFalse(checkTimer(timer, timeout), "Timer has timeouted!")
-		timer = timer-41
-		self.assertTrue(checkTimer(timer, timeout), "Timer has not timeouted!")
+		self.assertFalse(checkTimer(timers, timeout), "Timers has timeouted!")
+		timers = timers-41
+		self.assertTrue(checkTimer(timers, timeout), "Timers has not timeouted!")
 
 	def testExpiredList(self):
-		timers = [createTimer(),createTimer()-41,createTimer(),createTimer()]
+		timerss = [createTimer(),createTimer()-41,createTimer(),createTimer()]
 		timeout = 40
-		i = findExpiredTimer(timers, timeout)
+		i = findExpiredTimer(timerss, timeout)
 		self.assertEqual(i, 1)
-		timers.pop(i)
-		i = findExpiredTimer(timers, timeout)
+		timerss.pop(i)
+		i = findExpiredTimer(timerss, timeout)
 		self.assertEqual(i, -1)
 
 	def testSeekerHitHider1(self):
 		skr = 0
 		hdr = 1
-		players = [0,1,2,3,4,5]
-		hits = 		[0,2,0,0,0,0]
-		seekers = [0,2,3]
-		hiders = 	[1,4,5]
-		frozens = []
-		timer = 	[]
-		seekerHitHider(skr, hdr, seekers, hiders, players, hits, frozens, timer)
-		self.assertEqual(frozens, [1], "1 was not frozen!")
+		Game = TestGame()
+		players = Game.players = [0,1,2,3,4,5]
+		hits = Game.hits = 		[0,2,0,0,0,0]
+		seekers = Game.seekers = [0,2,3]
+		hiders = Game.hiders = 	[1,4,5]
+		frozen = Game.frozen = []
+		timers = Game.timers = 	[]
+		seekerHitHider(skr, hdr, Game)
+		self.assertEqual(frozen, [1], "1 was not frozen!")
 		self.assertEqual(hits, [0,3,0,0,0,0], "Hits were reset!")
 		self.assertEqual(hiders, [4,5], "Was not removed from hiders!")
 
 	def testSeekerHitHider2(self):
 		skr = 0
 		hdr = 1
-		players = [0,1,2,3,4,5]
-		hits = 		[0,4,0,0,0,0]
-		seekers = [0,2,3]
-		hiders = 	[1,4,5]
-		frozens = []
-		timer = 	[]
-		seekerHitHider(skr, hdr, seekers, hiders, players, hits, frozens, timer)
-		self.assertEqual(frozens, [1], "1 was not frozen!")
+		Game = TestGame()
+		players = Game.players = [0,1,2,3,4,5]
+		hits = Game.hits = 		[0,4,0,0,0,0]
+		seekers = Game.seekers = [0,2,3]
+		hiders = Game.hiders = 	[1,4,5]
+		frozen = Game.frozen = []
+		timers = Game.timers = 	[]
+		seekerHitHider(skr, hdr, Game)
+		self.assertEqual(frozen, [1], "1 was not frozen!")
 		self.assertEqual(hits, [0,5,0,0,0,0], "Hits were reset!")
 		self.assertEqual(hiders, [4,5], "Was not removed from hiders!")
 
 	def testSeekerHitHider3(self):
 		skr = 0
 		hdr = 1
-		players = [0,1,2,3,4,5]
-		hits = 		[0,5,0,0,0,0]
-		seekers = [0,2,3]
-		hiders = 	[1,4,5]
-		frozens = []
-		timer = 	[]
-		seekerHitHider(skr, hdr, seekers, hiders, players, hits, frozens, timer)
-		self.assertEqual(frozens, [], "1 was frozen!")
+		Game = TestGame()
+		players = Game.players = [0,1,2,3,4,5]
+		hits = Game.hits = 		[0,5,0,0,0,0]
+		seekers = Game.seekers = [0,2,3]
+		hiders = Game.hiders = 	[1,4,5]
+		frozen = Game.frozen = []
+		timers = Game.timers = 	[]
+
+		seekerHitHider(skr, hdr, Game)
+		self.assertEqual(frozen, [], "1 was frozen!")
 		self.assertEqual(hits, [0,6,0,0,0,0], "Hits were reset!")
 		self.assertEqual(hiders, [4,5], "Was not removed from hiders!")
 		self.assertEqual(seekers, [0,2,3,1], "Was not moved to seekers!")
 
-	def testPhP(self):
+	def testPhP1(self):
 		skr = 0
 		hdr = 1
-		players = [0,1,2,3,4,5]
-		hits = 		[0,2,0,0,0,0]
-		seekers = [0,2,3]
-		hiders = 	[1,4,5]
-		frozens = []
-		timer = 	[]
-		playerHitPlayer(skr, hdr, hiders, seekers, frozens, players, hits, timer)
-		self.assertEqual(frozens, [1], "1 was not frozen!")
+		Game = TestGame()
+		players = Game.players = [0,1,2,3,4,5]
+		hits = Game.hits = 		[0,2,0,0,0,0]
+		seekers = Game.seekers = [0,2,3]
+		hiders = Game.hiders = 	[1,4,5]
+		frozen = Game.frozen = []
+		timers = Game.timers = 	[]
+		unfreezeTimers = Game.unfreezeTimers = 	{}
+		playerHitPlayer(skr, hdr, Game)
+		self.assertEqual(frozen, [1], "1 was not frozen!")
 		self.assertEqual(hits, [0,3,0,0,0,0], "Hits were reset!")
 		self.assertEqual(hiders, [4,5], "Was not removed from hiders!")
-		playerHitPlayer(4, 1, hiders, seekers, frozens, players, hits, timer)
-		self.assertEqual(frozens, [], "1 was not unfrozen!")
+
+		Game.UNFREEZE_TIMEOUT = 3
+		Game.HIT_TIMEOUT = 0.3
+		playerHitPlayer(4, 1, Game)
+		key = (4, 1)
+		self.assertTrue(key in unfreezeTimers)
+		unfreezeTimers[key]["hit"] -= (Game.HIT_TIMEOUT - 0.1)
+		x1 = unfreezeTimers[key]["hit"]
+		updateHitTiming(key[0], key[1], unfreezeTimers)
+		x2 = unfreezeTimers[key]["hit"]
+		self.assertNotEqual(x1, x2, "They are equal!")
+
+		unfreezeTimers[key]["hit"] -= (Game.HIT_TIMEOUT + 1)
+		checkEveryoneHitTiming(Game)
+		self.assertNotIn(key, unfreezeTimers)
+
+	def testPhP2(self):
+		skr = 0
+		hdr = 1
+		Game = TestGame()
+		players = Game.players = [0,1,2,3,4,5]
+		hits = Game.hits = 		[0,2,0,0,0,0]
+		seekers = Game.seekers = [0,2,3]
+		hiders = Game.hiders = 	[1,4,5]
+		frozen = Game.frozen = []
+		timers = Game.timers = 	[]
+		unfreezeTimers = Game.unfreezeTimers = 	{}
+		playerHitPlayer(skr, hdr, Game)
+		self.assertEqual(frozen, [1], "1 was not frozen!")
+		self.assertEqual(hits, [0,3,0,0,0,0], "Hits were reset!")
+		self.assertEqual(hiders, [4,5], "Was not removed from hiders!")
+
+		Game.UNFREEZE_TIMEOUT = 3
+		Game.HIT_TIMEOUT = 0.3
+		playerHitPlayer(4, 1, Game)
+		key = (4, 1)
+		checkEveryoneHitTiming(Game)
+		unfreezeTimers[key]["unfreeze"] -= (Game.UNFREEZE_TIMEOUT + 1)
+		
+		checkEveryoneHitTiming(Game)
+		self.assertEqual(frozen, [], "1 was not unfrozen!")
 		self.assertEqual(hits, [0,3,0,0,0,0], "Hits were reset!")
 		self.assertEqual(hiders, [4,5,1], "Was not added to hiders!")
-		self.assertEqual(timer, [], "timers were not reset")
-
+		self.assertEqual(timers, [], "timerss were not reset")
+		
 
 	def testPlayerHits(self):
 		players = ["x", "y", "z", "a"]

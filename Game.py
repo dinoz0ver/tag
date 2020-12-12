@@ -1,15 +1,23 @@
 import Logic
-import Api as API
+import copy
+import time
 
 class RealGame: pass
 
-def init(Game):
+def init(Game, fake=True):
+  if not fake:
+    import Api as API
+  else:
+    import FakeApi as API
   # установка таймаутов
   Game.FREEZE_TIMEOUT = API.getFreezeTimeout()
   Game.SEEKER_TIMEOUT = API.getSeekerTimeout()
   Game.GAME_TIMEOUT = API.getGameTimeout()
   Game.SEEKERS_SPAWN = API.getSeekersSpawn()
   Game.HIDERS_SPAWN = API.getHidersSpawn()
+  Game.HIT_TIMEOUT = 0.3
+  Game.UNFREEZE_TIMEOUT = 3
+  Game.API = API
 
   # инициализация генератора случайных чисел
   Game.SEED = API.getSeed()
@@ -32,6 +40,7 @@ def init(Game):
   Game.frozen = []
   Game.timers = []
   Game.hits = Logic.createPlayersHits(players)
+  Game.unfreezeTimers = {}
 
   # отправляем Майну команду "начало игры"
   API.startGame(Game)
@@ -47,8 +56,8 @@ def init(Game):
 def copyGame(Game):
   newGame = RealGame()
   for name, obj in vars(Game).items():
-    if isinstance(obj, list):
-      newObj = obj.copy()
+    if isinstance(obj, list) or isinstance(obj, dict):
+      newObj = copy.deepcopy(obj)
     else:
       newObj = obj
     setattr(newGame, name, newObj)
@@ -81,10 +90,26 @@ def findDiff(oldGame, newGame):
       if score != oldGame.hits[i]:
         API.updateScore(newGame.players[i], score)
     changed = True
+  if oldGame.unfreezeTimers != newGame.unfreezeTimers:
+    changed = True
+    # поменялись таймеры на разморозку
+    if len(oldGame.unfreezeTimers) < len(newGame.unfreezeTimers):
+      # кто-то начал разморозку
+      newUnfreezers = listDiff(oldGame.unfreezeTimers, newGame.unfreezeTimers)
+      API.addUnfreezers(newUnfreezers)
+    elif len(oldGame.unfreezeTimers) == len(newGame.unfreezeTimers):
+      # обновился таймер
+      for key, oldTimers in oldGame.unfreezeTimers.items():
+        newTimers = newGame.unfreezeTimers[key]
+        hdr, frz = key
+        if key in newGame.unfreezeTimers and oldTimers != newTimers:
+          API.sendUnfreezeCount(hdr, frz, time.time() - newTimers["unfreeze"], newGame.UNFREEZE_TIMEOUT)
+
   return changed
 
 # TODO: seekertimer
 def GameLoop(Game):
+  API = Game.API
   gameCopy = copyGame(Game)
   while True:
     # проверка таймера искателей
@@ -107,6 +132,8 @@ def GameLoop(Game):
     i = Logic.findExpiredTimer(Game.timers, Game.FREEZE_TIMEOUT)
     if i != -1:
       Logic.goToSeekers(Game.seekers, Game.frozen[i], Game.frozen, Game.timers)
+    # проверка таймеров разморозки
+    Logic.checkEveryoneHitTiming(Game)
     # получение событий ударов
     # Пример: [EntityEvent(damager=vadimpilyugin, damagee=Dinozover)]
     hasHit = False
@@ -114,7 +141,7 @@ def GameLoop(Game):
       hasHit = True
       player1 = event.damager
       player2 = event.damagee
-      Logic.playerHitPlayer(player1, player2, Game.hiders, Game.seekers, Game.frozen, Game.players, Game.hits, Game.timers)
+      Logic.playerHitPlayer(player1, player2, Game)
 
     hasDiff = findDiff(gameCopy, Game)
 

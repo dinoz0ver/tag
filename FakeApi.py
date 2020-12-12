@@ -70,3 +70,16 @@ def announceWin(team):
   print(f"Team '{team}' has won!! Congratulations!")
 def finishGame(Game):
   print("Game has finished!")
+
+def addUnfreezers(unfreezers):
+  for key in unfreezers:
+    hdr, frz = key
+    print(f"{hdr} размораживает {frz}")
+
+def sendUnfreezeCount(hdr, frz, timePassed, timeTotal):
+  frac = timePassed / timeTotal
+  print(frac)
+  frac = int(frac*100)
+  if frac > 100:
+    frac = 100
+  print(f"[{frz}] разморозка {frac}%")
