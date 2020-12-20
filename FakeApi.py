@@ -1,4 +1,5 @@
 from queue import Queue
+from Utils import parse_command
 
 def getPlayers():
   return [f"{i+1} bruh" for i in range(5)]
@@ -50,6 +51,13 @@ def getPlayerHits():
   while not HitQueue.empty():
     hits.append(HitQueue.get())
   return hits
+
+CmdQueue = Queue()
+def getCommands():
+  cmds = []
+  while not CmdQueue.empty():
+    cmds.append(parse_command(CmdQueue.get()))
+  return cmds
 
 def removeHiders(hiders):
   print(f"Removing hiders {hiders} from the team")

@@ -4,7 +4,7 @@ import time
 
 class RealGame: pass
 
-def init(Game, fake=True):
+def init(Game, fake=True, gameTimeout=400):
   if not fake:
     import Api as API
   else:
@@ -12,11 +12,12 @@ def init(Game, fake=True):
   # установка таймаутов
   Game.FREEZE_TIMEOUT = API.getFreezeTimeout()
   Game.SEEKER_TIMEOUT = API.getSeekerTimeout()
-  Game.GAME_TIMEOUT = API.getGameTimeout()
+  Game.GAME_TIMEOUT = gameTimeout
   Game.SEEKERS_SPAWN = API.getSeekersSpawn()
   Game.HIDERS_SPAWN = API.getHidersSpawn()
-  Game.HIT_TIMEOUT = 0.3
+  Game.HIT_TIMEOUT = 0.8
   Game.UNFREEZE_TIMEOUT = 3
+  Game.CHECK_TIMER = 1
   Game.API = API
 
   # инициализация генератора случайных чисел
@@ -41,6 +42,7 @@ def init(Game, fake=True):
   Game.timers = []
   Game.hits = Logic.createPlayersHits(players)
   Game.unfreezeTimers = {}
+  Game.hidersArmor = {}
 
   # отправляем Майну команду "начало игры"
   API.startGame(Game)
@@ -52,6 +54,8 @@ def init(Game, fake=True):
   # то же самое, только для таймера искателей
   Game.seekertimer = Logic.createTimer()
   API.startSeekerTimer(Game.seekertimer, Game.SEEKER_TIMEOUT)
+
+  Game.checktimer = Logic.createTimer()
 
 def copyGame(Game):
   newGame = RealGame()
@@ -67,6 +71,7 @@ def listDiff(smaller, bigger):
   return list(set(bigger) - set(smaller))
 
 def findDiff(oldGame, newGame):
+  API = oldGame.API
   changed = False
   if len(newGame.hiders) < len(oldGame.hiders):
     # хайдеров стало меньше
@@ -128,12 +133,29 @@ def GameLoop(Game):
     if Logic.seekersWon(Game.seekers, Game.hiders, Game.frozen):
       API.announceWin("seekers")
       break
+    # проверка досрочной победы хайдеров
+    if Logic.hidersQuicklyWon(Game.seekers, Game.hiders, Game.frozen):
+      API.announceWin("hiders")
+      break
+    # проверка, не вышел ли кто-либо из игры
+    for event in API.getPlayerExistence():
+      if event.hasLeft():
+        API.onPlayerQuit(event.name)
+        Logic.removePlayerOnQuit(Game, event.name)
+    # проверка всякого раз в секунду
+    if Logic.checkTimer(Game.checktimer, Game.CHECK_TIMER):
+      Game.checktimer = Logic.createTimer()
+      API.checkHidersWearArmor(Game)
     # проверка таймеров замороженных игроков
     i = Logic.findExpiredTimer(Game.timers, Game.FREEZE_TIMEOUT)
     if i != -1:
       Logic.goToSeekers(Game.seekers, Game.frozen[i], Game.frozen, Game.timers)
     # проверка таймеров разморозки
     Logic.checkEveryoneHitTiming(Game)
+    # получение событий снежков
+    for event in API.getProjectileHits():
+      if Logic.is_hider(event.originName, Game.hiders) and Logic.is_seeker(event.targetName, Game.seekers):
+        API.slowPlayer(event.targetName)
     # получение событий ударов
     # Пример: [EntityEvent(damager=vadimpilyugin, damagee=Dinozover)]
     hasHit = False

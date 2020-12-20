@@ -153,6 +153,28 @@ def removeUnfreezeTimers(unfreezeTimers, frz):
   for key in toDel:
     del(unfreezeTimers[key])
 
+def removePlayerOnQuit(Game, pl):
+  iskr, ihdr, ifrz = find_seeker(pl, Game.seekers), find_seeker(pl, Game.hiders), find_seeker(pl, Game.frozen)
+  if iskr != -1 or ihdr != -1 or ifrz != -1:
+    flag = False
+    if iskr != -1:
+      print("Left player was a seeker")
+      Game.seekers.pop(iskr)
+      flag = True
+    elif ihdr != -1:
+      print("Left player was a hider")
+      Game.hiders.pop(ihdr)
+      flag = True
+    elif ifrz != -1:
+      print("Left player was frozen")
+      Game.frozen.pop(ifrz)
+      Game.timers.pop(ifrz)
+      flag = True
+    if flag:
+      print("Left player was in the game")
+      i = find_seeker(pl, Game.players)
+      Game.hits.pop(i)
+      Game.players.pop(i)
 
 # функция размораживает человека и добавляет его обратно
 # в список хайдеров
@@ -235,6 +257,12 @@ def hidersWon(seekers, hiders, frozen):
   if len(hiders) > 0:
     return True
   if len(frozen) > 0:
+    return True
+  return False
+
+# функция проверяет досрочную победу хайдеров
+def hidersQuicklyWon(seekers, hiders, frozen):
+  if len(seekers) == 0 and len(frozen+hiders) > 0:
     return True
   return False
 
