@@ -102,6 +102,10 @@ def findDiff(oldGame, newGame):
       # кто-то начал разморозку
       newUnfreezers = listDiff(oldGame.unfreezeTimers, newGame.unfreezeTimers)
       API.addUnfreezers(newUnfreezers)
+    elif len(oldGame.unfreezeTimers) > len(newGame.unfreezeTimers):
+      # кто-то закончил разморозку
+      oldUnfreezers = listDiff(newGame.unfreezeTimers, oldGame.unfreezeTimers)
+      API.removeUnfreezers(oldUnfreezers)
     elif len(oldGame.unfreezeTimers) == len(newGame.unfreezeTimers):
       # обновился таймер
       for key, oldTimers in oldGame.unfreezeTimers.items():

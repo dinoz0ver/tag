@@ -10,6 +10,7 @@
 import mcpi.minecraft as minecraft
 from Utils import pp_timer, parse_command
 from datetime import datetime
+import math
 
 oldPrint = print
 def newPrint(msg):
@@ -74,40 +75,61 @@ def startSeekerTimer(tmr, to):
   print(f"§9Искатели будут выпущены на поле через {pp_timer(tmr, to)}с")
 
 def clotheHider(hdr):
+  changed = False
   chestplate = mc.player.getChestplate(hdr)
   if chestplate.type == "NULL" or chestplate.type == "DIAMOND_CHESTPLATE":
     mc.player.setChestplate(hdr, material="LEATHER_CHESTPLATE")
     print(f"§4[{hdr}] Игрок не одел нагрудник")
+    changed = True
   helmet = mc.player.getHelmet(hdr)
   if helmet.type == "NULL" or helmet.type == "DIAMOND_HELMET":
     mc.player.setHelmet(hdr, material="LEATHER_HELMET")
     print(f"§4[{hdr}] Игрок не одел шлем")
+    changed = True
+  leggings = mc.player.getLeggings(hdr)
+  if leggings.type == "NULL" or leggings.type == "DIAMOND_LEGGINGS":
+    mc.player.setLeggings(hdr, material="LEATHER_LEGGINGS")
+    print(f"§4[{hdr}] Игрок не одел штаны")
+    changed = True
+  boots = mc.player.getBoots(hdr)
+  if boots.type == "NULL" or boots.type == "DIAMOND_BOOTS":
+    mc.player.setBoots(hdr, material="LEATHER_BOOTS")
+    print(f"§4[{hdr}] Игрок не одел ботинки")
+    changed = True
   hand = mc.player.getItem(hdr, "HAND")
   if hand == "AIR" or hand == "DIAMOND_SWORD":
     mc.player.setItem(hdr, "HAND", "AIR")
+  return changed
 
 def clotheSeeker(skr):
   mc.player.setChestplate(skr, material="DIAMOND_CHESTPLATE")
   mc.player.setHelmet(skr, material="DIAMOND_HELMET")
+  mc.player.setLeggings(skr, material="DIAMOND_LEGGINGS")
+  mc.player.setBoots(skr, material="DIAMOND_BOOTS")
   mc.player.setItem(skr, "HAND", "DIAMOND_SWORD")
 
 def getArmor(pl):
-  return mc.player.getChestplate(pl), mc.player.getHelmet(pl)
+  return mc.player.getChestplate(pl), mc.player.getHelmet(pl), mc.player.getLeggings(pl), mc.player.getBoots(pl)
 
 def saveArmor(Game, hdr):
-  Game.hidersArmor[hdr] = (mc.player.getChestplate(hdr), mc.player.getHelmet(hdr))
+  Game.hidersArmor[hdr] = getArmor(hdr) # (mc.player.getChestplate(hdr), mc.player.getHelmet(hdr))
 
 def loadArmor(Game, hdr):
   if hdr in Game.hidersArmor:
-    chest, helmet = Game.hidersArmor[hdr]
+    chest, helmet, leggings, boots = Game.hidersArmor[hdr]
     if chest.type != "NULL" and chest.type != "DIAMOND_CHESTPLATE":
       mc.player.setChestplate(hdr, armor=chest)
     if helmet.type != "NULL" and helmet.type != "DIAMOND_HELMET":
       mc.player.setHelmet(hdr, armor=helmet)
+    if leggings.type != "NULL" and leggings.type != "DIAMOND_LEGGINGS":
+      mc.player.setLeggings(hdr, armor=leggings)
+    if boots.type != "NULL" and boots.type != "DIAMOND_BOOTS":
+      mc.player.setBoots(hdr, armor=boots)
 
 def checkHidersWearArmor(Game):
   for hdr in Game.hiders:
-    clotheHider(hdr)
+    if clotheHider(hdr):
+      saveArmor(Game, hdr)
 
 def startGame(Game):
   print("§3Начинается игра в чай-чай-выручай!")
@@ -161,13 +183,13 @@ def addSeekers(seekers):
     mc.teams.addPlayer("seekers", skr)
     mc.player.makeVisible(skr)
     clotheSeeker(skr)
-    print(f"§4Игрок {skr} становится искателем!")
+    print(f"§9Игрок {skr} становится искателем!")
 
 def addFrozen(frozen, timeout):
   for pl in frozen:
     mc.player.freeze(pl)
     mc.player.givePotionEffect(pl, "SLOW", timeout, amplifier=3)
-    print(f"§4Игрок {pl} был заморожен!")
+    print(f"§9Игрок {pl} был заморожен!")
 
 def removeFrozen(frozen):
   for pl in frozen:
@@ -191,23 +213,68 @@ def finishGame(Game):
 def addUnfreezers(unfreezers):
   for key in unfreezers:
     hdr, frz = key
-    print(f"[{hdr}] размораживает {frz}")
+    print(f"§9[{hdr}] размораживает {frz}")
+
+def removeUnfreezers(unfreezers):
+  for pl in unfreezers:
+    mc.player.resetTitle(pl)
+
+def toChatColor(color):
+  if color == "red":
+    return "§4"
+  elif color == "yellow":
+    return "§e"
+  elif color == "light-green":
+    return "§a"
+  elif color == "white":
+    return "§f"
+  elif color == "dark-grey":
+    return "§8"
+  elif color == "aqua":
+    return "§b"
+
+def pretty_bars(frac, bars=17):
+  if frac <= 33:
+    color = "red"
+  elif frac <= 66:
+    color = "yellow"
+  else:
+    color = "light-green"
+  color = toChatColor(color)
+  white = toChatColor("white")
+  aqua = toChatColor("aqua")
+  darkgrey = toChatColor("dark-grey")
+  enabled_bars = math.ceil(bars*frac/100)
+  ar1 = [f"{color}¦"]*enabled_bars + [f"{white}¦"]*(bars-enabled_bars)
+  ar2 = list(map(lambda s: aqua+s, list(f"{frac}%")))
+  mid = len(ar1) // 2
+  for i in range(len(ar2)):
+    ar1[i+mid] = ar2[i]
+  ar1 = [f"{darkgrey}["]+ar1+[f"{darkgrey}]"]
+
+  return "".join(ar1)
 
 def sendUnfreezeCount(hdr, frz, timePassed, timeTotal):
   frac = timePassed / timeTotal
   frac = int(frac*100)
   if frac > 100:
     frac = 100
-  print(f"[{frz}] разморозка {frac}%")
+  title_color = toChatColor('light-green')
+  mc.player.sendTitle(hdr, pretty_bars(frac), f"{title_color}Разморозка")
+  # print(f"[{frz}] разморозка {frac}%")
 
 def postToChat(msg):
   print(msg)
 
 def resetAll(Game):
   removeFrozen(Game.frozen)
+  oldPrint(f"Saved armor:", Game.hidersArmor)
   for pl in Game.players:
     mc.setPos(pl, *getLobbySpawn())
     mc.player.makeVisible(pl)
+    if pl in Game.hidersArmor:
+      oldPrint(f"Clearing {pl} inventory")
+      mc.player.clearInventory(pl)
     loadArmor(Game, pl)
   for team in ["hiders", "seekers"]:
     mc.teams.removeTeam(team)
